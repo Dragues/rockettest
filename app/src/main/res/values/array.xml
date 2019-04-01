@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <array name="algorithms">
+        <item>My Algorithm</item>
+        <item>My Algorithm 2</item>
+        <item>My Algorithm 3</item>
+    </array>
+</resources>
