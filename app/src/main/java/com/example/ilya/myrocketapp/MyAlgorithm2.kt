@@ -19,52 +19,49 @@ class MyAlgorithm2(override val currentBitmapState: Array<BooleanArray>) : BaseA
 
     override fun clearFields() {
         for (i in checkedArray!!.indices) {
-            for (j in 0 until checkedArray!![i].size) {
+            for (j in 0 .. checkedArray!![i].size - 1) {
                 checkedArray!![i][j] = false
             }
         }
         resultOnUpdate.clear()
     }
 
-    override fun run(row: Int, column: Int, curColor: Boolean) {
+    public override fun run(row: Int, column: Int, curColor: Boolean) {
         clearFields()
-
-        checkedArray!![row][column] = true
         resultOnUpdate.add(Pair(row, column))
-        // MyAlgorithm
-        tryRight(row + 1, column, curColor)
-        tryLeft(row - 1, column, curColor)
-        tryUp(row, column + 1, curColor)
-        tryDown(row, column - 1, curColor)
-
+        while (hasCurColorNeighbours(curColor)) {
+            // profit // тусим тут пока забивается наш onRevertArray как бицуля
+        }
     }
 
-    private fun tryUp(i: Int, j: Int, isBlack: Boolean) {
-        razbegFunction(i, j, isBlack)
-    }
-
-    private fun tryDown(i: Int, j: Int, isBlack: Boolean) {
-        razbegFunction(i, j, isBlack)
-    }
-
-    private fun tryLeft(i: Int, j: Int, isBlack: Boolean) {
-        razbegFunction(i, j, isBlack)
-    }
-
-    private fun tryRight(i: Int, j: Int, isBlack: Boolean) {
-        razbegFunction(i, j, isBlack)
-    }
-
-    private fun razbegFunction(i: Int, j: Int, isBlack: Boolean) {
-        if (i > -1 && j > -1 && i < checkedArray!!.size && j < checkedArray!![0].size &&
-                !checkedArray!![i][j] && currentBitmapState[i][j] == isBlack) {
-            checkedArray!![i][j] = true
-            resultOnUpdate.add(Pair(i, j))
-            tryRight(i, j + 1, isBlack)
-            tryLeft(i, j - 1, isBlack)
-            tryUp(i + 1, j, isBlack)
-            tryDown(i - 1, j, isBlack)
-        } else
-            return
+    private fun hasCurColorNeighbours(curColor: Boolean): Boolean {
+        var result = false
+        for (i in resultOnUpdate.size - 1 downTo -1 + 1) {
+            val onUpdateItem = resultOnUpdate[i]
+            if (!checkedArray!![onUpdateItem.first][onUpdateItem.second]) {
+                checkedArray!![onUpdateItem.first][onUpdateItem.second] = true
+                if (onUpdateItem.first - 1 >= 0 && !checkedArray!![onUpdateItem.first - 1][onUpdateItem.second] &&
+                        currentBitmapState[onUpdateItem.first - 1][onUpdateItem.second] == curColor) {
+                    resultOnUpdate.add(Pair(onUpdateItem.first - 1, onUpdateItem.second))
+                    result = true
+                }
+                if (onUpdateItem.first + 1 < currentBitmapState.size && !checkedArray!![onUpdateItem.first + 1][onUpdateItem.second] &&
+                        currentBitmapState[onUpdateItem.first + 1][onUpdateItem.second] == curColor) {
+                    resultOnUpdate.add(Pair(onUpdateItem.first + 1, onUpdateItem.second))
+                    result = true
+                }
+                if (onUpdateItem.second - 1 >= 0 && !checkedArray!![onUpdateItem.first][onUpdateItem.second - 1] &&
+                        currentBitmapState[onUpdateItem.first][onUpdateItem.second - 1] == curColor) {
+                    resultOnUpdate.add(Pair(onUpdateItem.first, onUpdateItem.second - 1))
+                    result = true
+                }
+                if (onUpdateItem.second + 1 < currentBitmapState[0].size && !checkedArray!![onUpdateItem.first][onUpdateItem.second + 1] &&
+                        currentBitmapState[onUpdateItem.first][onUpdateItem.second + 1] == curColor) {
+                    resultOnUpdate.add(Pair(onUpdateItem.first, onUpdateItem.second + 1))
+                    result = true
+                }
+            }
+        }
+        return result
     }
 }

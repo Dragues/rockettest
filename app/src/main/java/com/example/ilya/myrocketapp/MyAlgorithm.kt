@@ -19,7 +19,7 @@ class MyAlgorithm(override val currentBitmapState: Array<BooleanArray>) : BaseAl
 
     override fun clearFields() {
         for (i in checkedArray!!.indices) {
-            for (j in 0 until checkedArray!![i].size) {
+            for (j in 0 .. checkedArray!![i].size - 1) {
                 checkedArray!![i][j] = false
             }
         }

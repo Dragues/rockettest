@@ -4,9 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Pair
 import android.view.MotionEvent
-import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageView
@@ -21,13 +19,13 @@ import java.util.concurrent.TimeUnit
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
-import rx.functions.Func1
 import rx.schedulers.Schedulers
 
 class MainActivity : AppCompatActivity() {
 
     private var genButton: Button? = null
     private var sizeUp: Button? = null
+    private var viewGroupHolder: LinearLayout? = null
     private var sizeDown: Button? = null
     private var speedBar: SeekBar? = null
     private var qrCode: ImageView? = null
@@ -42,10 +40,11 @@ class MainActivity : AppCompatActivity() {
     private val MIN_SQUARE_VALUE = 25
 
     // MY ALGORITHM
-    private var arrBoolean: Array<BooleanArray> =  Array(1) {BooleanArray(1)}// состояния пикселей битмапки (чтобы не вычитывать пожертвуем памятью) Массив boolean можем себе позволить
+    private var arrBoolean: Array<BooleanArray> = Array(1) { BooleanArray(1) }// состояния пикселей битмапки (чтобы не вычитывать пожертвуем памятью) Массив boolean можем себе позволить
     private var subscrOnUpdate: Subscription? = null // подписка на апдейт состояния view
     private var subscrOnUpdate2: Subscription? = null // подписка на апдейт состояния view
     private var fillTaskInProgress = false // флаг что таск на заливку ушел
+    private var isGenerated = false
     private val algorithmsOnProcess = ArrayList<BaseAlgorithm>()
 
     // Собственно алгоритмы
@@ -66,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         speedBar = findViewById<SeekBar>(R.id.seekBar)
         sizeUp = findViewById<Button>(R.id.sizeplus)
         sizeDown = findViewById<Button>(R.id.sizeminus)
+        viewGroupHolder = findViewById<LinearLayout>(R.id.view_holder);
 
         qrSetting1 = findViewById<Spinner>(R.id.qr_setting_1)
         qrSetting2 = findViewById<Spinner>(R.id.qr_setting_2)
@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runFillViewTouch(event: MotionEvent) {
-        if (fillTaskInProgress) {
+        if (fillTaskInProgress || !isGenerated) {
             return
         }
         fillTaskInProgress = true
@@ -129,8 +129,8 @@ class MainActivity : AppCompatActivity() {
                     Observable.just(onUpdate)
                 })
                 .subscribe { onUpdateItem ->
-                    for (i in onUpdateItem.first * pixelCountInSquare .. onUpdateItem.first * pixelCountInSquare + pixelCountInSquare - 1) {
-                        for (j in onUpdateItem.second * pixelCountInSquare .. onUpdateItem.second * pixelCountInSquare + pixelCountInSquare - 1) {
+                    for (i in onUpdateItem.first * pixelCountInSquare..onUpdateItem.first * pixelCountInSquare + pixelCountInSquare - 1) {
+                        for (j in onUpdateItem.second * pixelCountInSquare..onUpdateItem.second * pixelCountInSquare + pixelCountInSquare - 1) {
                             currentBitmap!!.setPixel(j, i, if (curColor) Color.WHITE else Color.BLACK)
                         }
                     }
@@ -138,7 +138,8 @@ class MainActivity : AppCompatActivity() {
                     qrCode!!.setImageBitmap(currentBitmap)
                     if (algResult1.isEmpty()) {
                         subscrOnUpdate!!.unsubscribe()
-                        fillTaskInProgress = false
+                        if (subscrOnUpdate2!!.isUnsubscribed)
+                            fillTaskInProgress = false
                     }
                 }
 
@@ -149,17 +150,18 @@ class MainActivity : AppCompatActivity() {
                     val onUpdate = algResult2[0]
                     algResult2.removeAt(0)
                     Observable.just(onUpdate)
-                } )
+                })
                 .subscribe { onUpdateItem ->
-                    for (i in onUpdateItem.first * pixelCountInSquare .. onUpdateItem.first * pixelCountInSquare + pixelCountInSquare - 1) {
-                        for (j in onUpdateItem.second * pixelCountInSquare .. onUpdateItem.second * pixelCountInSquare + pixelCountInSquare - 1) {
+                    for (i in onUpdateItem.first * pixelCountInSquare..onUpdateItem.first * pixelCountInSquare + pixelCountInSquare - 1) {
+                        for (j in onUpdateItem.second * pixelCountInSquare..onUpdateItem.second * pixelCountInSquare + pixelCountInSquare - 1) {
                             currentBitmap2!!.setPixel(j, i, if (curColor) Color.WHITE else Color.BLACK)
                         }
                     }
                     qrCode2!!.setImageBitmap(currentBitmap2)
                     if (algResult2.isEmpty()) {
                         subscrOnUpdate2!!.unsubscribe()
-                        fillTaskInProgress = false
+                        if (subscrOnUpdate!!.isUnsubscribed)
+                            fillTaskInProgress = false
                     }
                 }
     }
@@ -178,6 +180,7 @@ class MainActivity : AppCompatActivity() {
         if (fillTaskInProgress) {
             return
         }
+        isGenerated = true;
         val width = qrCode!!.width - qrCode!!.width % 100
         val height = qrCode!!.height - qrCode!!.height % 100
 
@@ -185,13 +188,14 @@ class MainActivity : AppCompatActivity() {
         qrcodeParams.width = width
         qrcodeParams.height = height
         qrCode!!.layoutParams = qrcodeParams
+        qrCode2!!.layoutParams = qrcodeParams
 
         currentBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         currentBitmap2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         arrBoolean = Array(height / pixelCountInSquare) { BooleanArray(width / pixelCountInSquare) }
         val rand = Random()
-        for (i in 0 .. height / pixelCountInSquare - 1) {
-            for (j in 0 .. width / pixelCountInSquare - 1) {
+        for (i in 0..height / pixelCountInSquare - 1) {
+            for (j in 0..width / pixelCountInSquare - 1) {
                 // default color : Black
                 var colorToPut = Color.BLACK
 
@@ -203,13 +207,13 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Set color to (i,j) pixel
-                for (k in i * pixelCountInSquare .. i * pixelCountInSquare + pixelCountInSquare - 1) {
-                    for (l in j * pixelCountInSquare .. j * pixelCountInSquare + pixelCountInSquare - 1) {
+                for (k in i * pixelCountInSquare..i * pixelCountInSquare + pixelCountInSquare - 1) {
+                    for (l in j * pixelCountInSquare..j * pixelCountInSquare + pixelCountInSquare - 1) {
                         try {
                             currentBitmap!!.setPixel(l, k, colorToPut)
                             currentBitmap2!!.setPixel(l, k, colorToPut)
+                        } catch (e: Exception) {
                         }
-                        catch (e: Exception){}
                     }
                 }
             }

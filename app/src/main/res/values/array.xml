@@ -3,7 +3,7 @@
 
     <array name="algorithms">
         <item>My Algorithm</item>
-        <item>My Algorithm 2</item>
+        <item>Обход в ширину</item>
         <item>My Algorithm 3</item>
     </array>
 </resources>

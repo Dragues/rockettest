@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyRocketApp</string>
+    <string name="app_name">MyRocketApp! Enjoy!</string>
     <string name="speed_label">Speed</string>
-    <string name="enjoy_it">Наслаждайтесь ребятушки</string>
+    <string name="enjoy_it">Наслаждайтесь</string>
 </resources>
